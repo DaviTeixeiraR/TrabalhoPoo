@@ -1,0 +1,7 @@
+# Eclipse workspace
+/.metadata/
+*/.metadata/
+
+# Compilados
+bin/
+*.class
