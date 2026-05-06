@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\dev\\\\TrabalhoPoo\\\\TrabaioPOO\" -Recurse -Force)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(find /c/dev/TrabalhoPoo -name \"*.jar\" 2>/dev/null | head -30 *)"
+    ]
+  }
+}
