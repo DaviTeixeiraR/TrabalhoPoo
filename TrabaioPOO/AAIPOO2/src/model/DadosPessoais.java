@@ -4,21 +4,21 @@ import java.time.LocalDate;
 
 public class DadosPessoais {
     private String cpf;
-    private String nomeCliente;
+    private String nome;
     private String telefone;
     private String email;
-    private LocalDate dataNascimento;
+    private LocalDate dtNascimento;
 
     // Construtor vazio (necessário para o DAO)
     public  DadosPessoais() {}
 
     // Construtor completo (usado no momento do cadastro)
-    public DadosPessoais(String cpf, String nomeCliente, String telefone, String email, LocalDate dataNascimento) {
+    public DadosPessoais(String cpf, String nome, String telefone, String email, LocalDate dtNascimento) {
         this.cpf = cpf;
-        this.nomeCliente = nomeCliente;
+        this.nome = nome;
         this.telefone = telefone;
         this.email = email;
-        this.dataNascimento = dataNascimento;
+        this.dtNascimento = dtNascimento;
     }
 
     // --- GETTERS E SETTERS ---
@@ -32,11 +32,11 @@ public class DadosPessoais {
     }
 
     public String getNomeCliente() {
-        return nomeCliente;
+        return nome;
     }
 
     public void setNomeCliente(String nomeCliente) {
-        this.nomeCliente = nomeCliente;
+        this.nome = nomeCliente;
     }
 
     public String getTelefone() {
@@ -56,10 +56,10 @@ public class DadosPessoais {
     }
 
     public LocalDate getDataNascimento() {
-        return dataNascimento;
+        return dtNascimento;
     }
 
     public void setDataNascimento(LocalDate dataNascimento) {
-        this.dataNascimento = dataNascimento;
+        this.dtNascimento = dataNascimento;
     }
 }

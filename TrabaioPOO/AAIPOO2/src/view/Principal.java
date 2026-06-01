@@ -11,10 +11,10 @@ public class Principal extends Application {
 		// Cria a tela de login
 //		Tela_Login telaLogin = new Tela_Login();
 //		Scene scene = telaLogin.getScene();
-       TelaQuartos telaQuartos = new TelaQuartos();
-        Scene scene = telaQuartos.getScene();
-//		TelaDadosPessoais telaDadosPessoais = new TelaDadosPessoais();
-//		Scene scene = telaDadosPessoais.getScene();
+//       TelaQuartos telaQuartos = new TelaQuartos();
+//       Scene scene = telaQuartos.getScene();
+		TelaDadosPessoais telaDadosPessoais = new TelaDadosPessoais();
+		Scene scene = telaDadosPessoais.getScene();
 		
 		// Configura o Stage (janela)
 		stage.setTitle("Sistema do Hotel - Login");

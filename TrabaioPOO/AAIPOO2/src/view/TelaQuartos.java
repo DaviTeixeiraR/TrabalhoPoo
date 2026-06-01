@@ -48,7 +48,7 @@ public class TelaQuartos {// cadastro de quarto
 		tfCodQuarto = new TextField();
 		tfCodQuarto.setPrefWidth(250);
 		tfCodQuarto.setPromptText("Digite o código do quarto ");
-		hboxcCodQuarto.getChildren().addAll(lblCodQuarto, tfCodQuarto);
+		hboxCodQuarto.getChildren().addAll(lblCodQuarto, tfCodQuarto);
 
 		// HBox Número Quarto
 		HBox hboxNumQuarto = new HBox(15);
@@ -101,8 +101,7 @@ public class TelaQuartos {// cadastro de quarto
 		lblErro.setFont(Font.font(12));
 		lblErro.setStyle("-fx-padding: 10 0 0 0;");
 
-		root.getChildren().addAll(lblTitulo, hboxNumQuarto, hboxQtd, hboxPreco, btnCadastro, lblErro);
-
+		root.getChildren().addAll(lblTitulo, hboxCodQuarto, hboxNumQuarto, hboxQtd, hboxPreco, btnCadastro, lblErro);
 		Scene scene = new Scene(root, 450, 450);
 		return scene;
 	}
@@ -111,8 +110,9 @@ public class TelaQuartos {// cadastro de quarto
 		String cadastro = tfNumQuarto.getText().trim();
 		String qtd = tfQtdPessoas.getText().trim();
 		String preco = tfPreco.getText().trim();
-
-		return !cadastro.isEmpty() && !qtd.isEmpty() && !preco.isEmpty();
+		String codQuarto = tfCodQuarto.getText().trim();
+		
+		return !codQuarto.isEmpty() && !cadastro.isEmpty() && !qtd.isEmpty() && !preco.isEmpty();
 	}
 
 	private void handleLogin() throws SQLException {
@@ -120,12 +120,12 @@ public class TelaQuartos {// cadastro de quarto
 		if (validarCampos()) {
 			lblErro.setTextFill(Color.GREEN);
 			lblErro.setText("Cadastro realizado com sucesso!");
+			String codQuarto =  tfCodQuarto.getText().trim();
 			String numQuarto = tfNumQuarto.getText().trim();
 			int qtdPessoas = Integer.parseInt(tfQtdPessoas.getText().trim());
 			double preco = Double.parseDouble(tfPreco.getText().trim());
-//		    int emprestadas = Integer.parseInt(tfEmpr.getText().trim());
 
-			Quarto quarto = new Quarto(codQuarto, numQuarto, QtdPessoas, precoBase, idStatus);
+			Quarto quarto = new Quarto(codQuarto, numQuarto, qtdPessoas, preco, 1);
 			quartoCtrl = new QuartoController(quarto);
 			quartoCtrl.salvarQuarto();
 

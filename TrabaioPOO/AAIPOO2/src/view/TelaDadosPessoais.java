@@ -66,9 +66,9 @@ public class TelaDadosPessoais { // cadastro de pessoas
 
 		// HBox E-mail
 		HBox hboxEmail = new HBox(15);
-		hboxNome.setAlignment(Pos.CENTER_LEFT);
+		hboxEmail.setAlignment(Pos.CENTER_LEFT);
 		Label lblEmail = new Label("Email:");
-		lblNome.setFont(Font.font(14));
+		lblEmail.setFont(Font.font(14));
 		tfEmail = new TextField();
 		tfEmail.setPrefWidth(250);
 		tfEmail.setPromptText("Digite o seu e-mail");
@@ -83,17 +83,17 @@ public class TelaDadosPessoais { // cadastro de pessoas
 		tfTelefone.setPrefWidth(250);
 		tfTelefone.setPromptText("Ex: (11) 99999-9999");
 		hboxTelefone.getChildren().addAll(lblTelefone, tfTelefone);
-		
-		 // HBox Data de Nascimento
-        HBox hboxDtNascimento = new HBox(15);
-        hboxDtNascimento.setAlignment(Pos.CENTER_LEFT);
-        Label lblDtNascimento = new Label("Data de Nascimento:");
-        lblDtNascimento.setFont(Font.font(14));
-        tfDtNascimento = new DatePicker();
-        tfDtNascimento.setPrefWidth(250);
-        tfDtNascimento.setPromptText("Selecione a data");
-        hboxDtNascimento.getChildren().addAll(lblDtNascimento, tfDtNascimento);
-		
+
+		// HBox Data de Nascimento
+		HBox hboxDtNascimento = new HBox(15);
+		hboxDtNascimento.setAlignment(Pos.CENTER_LEFT);
+		Label lblDtNascimento = new Label("Data de Nascimento:");
+		lblDtNascimento.setFont(Font.font(14));
+		tfDtNascimento = new DatePicker();
+		tfDtNascimento.setPrefWidth(250);
+		tfDtNascimento.setPromptText("Selecione a data");
+		hboxDtNascimento.getChildren().addAll(lblDtNascimento, tfDtNascimento);
+
 		// Botão Cadastro
 		Button btnCadastro = new Button("Cadastrar");
 		btnCadastro.setPrefWidth(150);
@@ -115,7 +115,7 @@ public class TelaDadosPessoais { // cadastro de pessoas
 		lblErro.setStyle("-fx-padding: 10 0 0 0;");
 
 		// Adicionando os novos componentes na árvore visual do JavaFX
-		root.getChildren().addAll(lblTitulo, hboxCPF, hboxNome, hboxTelefone, btnCadastro, lblErro);
+		root.getChildren().addAll(lblTitulo, hboxCPF, hboxNome, hboxEmail, hboxDtNascimento, hboxTelefone, btnCadastro, lblErro);
 
 		Scene scene = new Scene(root, 450, 450);
 		return scene;
@@ -126,9 +126,9 @@ public class TelaDadosPessoais { // cadastro de pessoas
 		String nome = tfNomePessoa.getText().trim();
 		String telefone = tfTelefone.getText().trim();
 		String email = tfEmail.getText().trim();
-		LocalDate DtNascimento = tfDtNascimento.getValue();
+		LocalDate dtNascimento = tfDtNascimento.getValue();
 
-		return !cpf.isEmpty() && !nome.isEmpty() && !telefone.isEmpty() && !email.isEmpty() && DtNascimento != null;
+		return !cpf.isEmpty() && !nome.isEmpty() && !telefone.isEmpty() && !email.isEmpty() && dtNascimento != null;
 	}
 
 	private void handleLogin() throws SQLException {
@@ -140,12 +140,12 @@ public class TelaDadosPessoais { // cadastro de pessoas
 			String cpf = tfNumCPF.getText().trim();
 			String nome = tfNomePessoa.getText().trim();
 			String telefone = tfTelefone.getText().trim();
+			String email = tfEmail.getText().trim();
+			LocalDate dataNascimento = tfDtNascimento.getValue();
 
-			// ATENÇÃO: Mantive a chamada original do Quarto, mas você provavelmente vai
-			// querer substituir isso por um modelo 'Pessoa' e um 'PessoaController'.
-			DadosPessoais dadosPessoais = new DadosPessoais(cpf, nomeCliente, telefone, email, DtNascimento);
-			dadosPesCtrl = new DadosPesController(dadosPesCtrl);
-			DadosPesController.salvarDadosPessoais();
+			DadosPessoais dadosPessoais = new DadosPessoais(cpf, nome, telefone, email, dataNascimento);
+			DadosPesController dadosPesController = new DadosPesController(dadosPessoais);
+			dadosPesController.salvarDadosPessoais();
 
 		} else {
 			lblErro.setTextFill(Color.RED);

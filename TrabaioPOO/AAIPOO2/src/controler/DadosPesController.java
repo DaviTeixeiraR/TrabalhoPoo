@@ -10,7 +10,7 @@ public class DadosPesController {
     private DadosPesDao dao;
 	private DadosPessoais dadosPessoais;
 	
-	public DadosPesController(DadosPesController dadosPesCtrl) {
+	public DadosPesController(DadosPessoais dadosPessoais) {
 		this.dadosPessoais = dadosPessoais;
 	}
 	
