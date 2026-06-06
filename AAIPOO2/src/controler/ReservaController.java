@@ -6,6 +6,7 @@ import javafx.scene.control.Alert;
 import model.Conexao;
 import model.Reserva;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,6 +87,34 @@ public class ReservaController {
             return dao.contarAtivas();
         } catch (Exception e) {
             return 0;
+        } finally {
+            Conexao.desconectar();
+        }
+    }
+
+    // ── Verificar conflito de período para um quarto ──────────
+
+    public boolean existeConflito(int codQuarto, LocalDate checkin, LocalDate checkout) {
+        try {
+            Conexao.conectar();
+            ReservaDao dao = new ReservaDao(Conexao.conexao);
+            return dao.existeConflito(codQuarto, checkin, checkout);
+        } catch (Exception e) {
+            return false;
+        } finally {
+            Conexao.desconectar();
+        }
+    }
+
+    // ── Verificar reserva duplicada ───────────────────────────
+
+    public boolean existeReservaDuplicada(String cpf, int codQuarto, LocalDate checkin, LocalDate checkout) {
+        try {
+            Conexao.conectar();
+            ReservaDao dao = new ReservaDao(Conexao.conexao);
+            return dao.existeReservaDuplicada(cpf, codQuarto, checkin, checkout);
+        } catch (Exception e) {
+            return false;
         } finally {
             Conexao.desconectar();
         }

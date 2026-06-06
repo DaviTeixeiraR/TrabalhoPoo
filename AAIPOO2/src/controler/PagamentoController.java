@@ -13,10 +13,6 @@ import model.Reserva;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Controller responsável pelas operações de Pagamento e Checkout.
- * Ao confirmar pagamento, também libera o quarto (status = Disponível).
- */
 public class PagamentoController {
 
     private Pagamento pagamento;
@@ -29,20 +25,13 @@ public class PagamentoController {
 
     // ── Registrar pagamento e liberar quarto ──────────────────
 
-    /**
-     * Registra o pagamento no banco e atualiza o status do quarto para Disponível.
-     * @param codQuarto  código do quarto a ser liberado
-     * @return true se operação bem-sucedida
-     */
-    public boolean registrarPagamento(String codQuarto) {
+    public boolean registrarPagamento(int codQuarto) {
         try {
             Conexao.conectar();
 
-            // 1. Inserir pagamento
             PagamentoDao pagDao = new PagamentoDao(Conexao.conexao);
             pagDao.inserir(pagamento);
 
-            // 2. Liberar quarto (id_status = 1 → Disponível)
             QuartoDao quartoDao = new QuartoDao(Conexao.conexao);
             quartoDao.atualizarStatus(codQuarto, 1);
 
@@ -56,7 +45,7 @@ public class PagamentoController {
         }
     }
 
-    // ── Listar formas de pagamento (para ComboBox) ─────────────
+    // ── Listar formas de pagamento (ComboBox) ─────────────────
 
     public List<FormaPagamento> listarFormasPagamento() {
         try {
@@ -64,11 +53,10 @@ public class PagamentoController {
             FormaPagamentoDao dao = new FormaPagamentoDao(Conexao.conexao);
             return dao.listar();
         } catch (Exception e) {
-            // Fallback com opções padrão
             List<FormaPagamento> fallback = new ArrayList<>();
             fallback.add(new FormaPagamento(1, "Dinheiro"));
-            fallback.add(new FormaPagamento(2, "Cartão de Crédito"));
-            fallback.add(new FormaPagamento(3, "Cartão de Débito"));
+            fallback.add(new FormaPagamento(2, "Cartao de Credito"));
+            fallback.add(new FormaPagamento(3, "Cartao de Debito"));
             fallback.add(new FormaPagamento(4, "PIX"));
             return fallback;
         } finally {
@@ -76,7 +64,7 @@ public class PagamentoController {
         }
     }
 
-    // ── Listar todos os pagamentos (para Relatório) ────────────
+    // ── Listar todos os pagamentos (Relatorio) ────────────────
 
     public List<Pagamento> listarTodos() {
         try {
@@ -106,7 +94,7 @@ public class PagamentoController {
         }
     }
 
-    // ── Método auxiliar de alerta de erro ─────────────────────
+    // ── Alerta de erro ────────────────────────────────────────
 
     private void mostrarErro(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);

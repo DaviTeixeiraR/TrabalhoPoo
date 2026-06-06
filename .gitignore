@@ -5,3 +5,12 @@
 # Compilados
 bin/
 *.class
+
+# Arquivo local de inicialização JavaFX
+AAIPOO2/src/view/Launcher.java
+
+# Scripts e arquivos locais de banco de dados
+banco_local/
+
+# Configuração local do banco — cada máquina tem o seu
+AAIPOO2/src/db.properties

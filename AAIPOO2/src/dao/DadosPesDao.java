@@ -93,12 +93,31 @@ public class DadosPesDao {
         stmt.close();
     }
 
+    /**
+     * Exclui o cliente fisicamente, mas SOMENTE se não houver nenhuma reserva
+     * (ativa ou histórica) vinculada a ele.
+     * Dessa forma a receita e o histórico financeiro nunca são afetados.
+     * Lança {@link IllegalStateException}("HAS_HISTORY") se existir qualquer reserva.
+     */
     public void deletar(String cpf) throws SQLException {
-        String sql = "DELETE FROM Cliente WHERE cpf = ?";
+        // Verifica se há qualquer reserva (ativa OU já finalizada/paga)
+        String sqlCheck = "SELECT COUNT(*) FROM Reserva WHERE cpf = ?";
+        PreparedStatement checkStmt = conn.prepareStatement(sqlCheck);
+        checkStmt.setString(1, cpf);
+        ResultSet rs = checkStmt.executeQuery();
+        rs.next();
+        int totalReservas = rs.getInt(1);
+        rs.close();
+        checkStmt.close();
 
-        PreparedStatement stmt = conn.prepareStatement(sql);
+        if (totalReservas > 0) {
+            // Impossível excluir sem schema change — bloqueia para preservar receita
+            throw new IllegalStateException("HAS_HISTORY");
+        }
+
+        // Sem histórico → exclusão física segura (sem impacto na receita)
+        PreparedStatement stmt = conn.prepareStatement("DELETE FROM Cliente WHERE cpf = ?");
         stmt.setString(1, cpf);
-
         stmt.executeUpdate();
         stmt.close();
     }

@@ -3,141 +3,478 @@ package view;
 import java.sql.SQLException;
 
 import controler.QuartoController;
+import dao.TipoQuartoDao;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import model.Conexao;
 import model.Quarto;
+import model.ThemeManager;
+import model.TipoQuarto;
+import util.Validador;
 
-public class TelaQuartos {// cadastro de quarto
+/**
+ * Tela de Quartos — CRUD completo.
+ * Layout split: tabela à esquerda (listagem) + formulário à direita (add/edit).
+ */
+public class TelaQuartos {
 
-	private TextField tfCodQuarto;
-	private TextField tfNumQuarto; // Campo para cadastro quarto
-	private TextField tfQtdPessoas; // Campo para quantidade de pessoas
-	private TextField tfPreco; // NOVO: Campo para preço do quarto
-	private Label lblErro; // Label para exibir mensagens
+    // ── Tabela ─────────────────────────────────────────────────
+    private TableView<Quarto> tabela;
 
-	private QuartoController quartoCtrl;
+    // ── Campos do formulário ───────────────────────────────────
+    private TextField            tfNumQuarto;
+    private ComboBox<TipoQuarto> cbTipo;
 
-	public Node getNode() {
-		return getScene().getRoot();
-	}
+    // ── Estado do formulário ───────────────────────────────────
+    private Quarto quartoSelecionado = null; // null = modo adição
 
-	public Scene getScene() {
-		// VBox principal
-		VBox root = new VBox(20);
-		root.setAlignment(Pos.CENTER);
-		root.setPadding(new Insets(40));
+    // ── Elementos dinâmicos do formulário ─────────────────────
+    private Label  lblFormTitulo;
+    private Label  lblFeedback;
+    private Button btnPrimario;
+    private Button btnExcluir;
+    private Button btnCancelar;
 
-		root.setStyle("-fx-background-color: linear-gradient(to bottom, #F5F0E8, #F5F0E8);");
+    // ─────────────────────────────────────────────────────────
+    // PONTO DE ENTRADA
+    // ─────────────────────────────────────────────────────────
 
-		// Título
-		Label lblTitulo = new Label("Cadastro - Quarto");
-		lblTitulo.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-		lblTitulo.setTextFill(Color.DARKBLUE);
+    public Node getNode() {
+        VBox root = new VBox(18);
+        root.setPadding(new Insets(30, 40, 30, 40));
+        root.setStyle("-fx-background-color: " + ThemeManager.bg() + ";");
+        VBox.setVgrow(root, Priority.ALWAYS);
 
-		// HBox Codigo Quarto
-		HBox hboxCodQuarto = new HBox(15);
-		hboxCodQuarto.setAlignment(Pos.CENTER_LEFT);
-		Label lblCodQuarto = new Label("Código do Quarto:");
-		lblCodQuarto.setFont(Font.font(14));
-		tfCodQuarto = new TextField();
-		tfCodQuarto.setPrefWidth(250);
-		tfCodQuarto.setPromptText("Digite o código do quarto ");
-		hboxCodQuarto.getChildren().addAll(lblCodQuarto, tfCodQuarto);
+        // Cabeçalho
+        Label lblTitulo = new Label("🔑  Quartos");
+        lblTitulo.setFont(Font.font("Arial", FontWeight.BOLD, 26));
+        lblTitulo.setTextFill(Color.web(ThemeManager.titleColor()));
 
-		// HBox Número Quarto
-		HBox hboxNumQuarto = new HBox(15);
-		hboxNumQuarto.setAlignment(Pos.CENTER_LEFT);
-		Label lblNumQuarto = new Label("Nº Quarto:");
-		lblNumQuarto.setFont(Font.font(14));
-		tfNumQuarto = new TextField();
-		tfNumQuarto.setPrefWidth(250);
-		tfNumQuarto.setPromptText("Digite o número do quarto ");
-		hboxNumQuarto.getChildren().addAll(lblNumQuarto, tfNumQuarto);
+        Label lblSub = new Label("Cadastre, edite ou exclua quartos do hotel.");
+        lblSub.setFont(Font.font("Arial", 14));
+        lblSub.setTextFill(Color.web(ThemeManager.subtitleColor()));
 
-		// HBox Quantidade de Pessoas
-		HBox hboxQtd = new HBox(15);
-		hboxQtd.setAlignment(Pos.CENTER_LEFT);
-		Label lblQtd = new Label("Qtd. Pessoas:");
-		lblQtd.setFont(Font.font(14));
-		tfQtdPessoas = new TextField();
-		tfQtdPessoas.setPrefWidth(250);
-		tfQtdPessoas.setPromptText("Ex: 2");
-		hboxQtd.getChildren().addAll(lblQtd, tfQtdPessoas);
+        VBox titulo = new VBox(4, lblTitulo, lblSub);
 
-		// HBox Preço
-		HBox hboxPreco = new HBox(15);
-		hboxPreco.setAlignment(Pos.CENTER_LEFT);
-		Label lblPreco = new Label("Preço Diária:");
-		lblPreco.setFont(Font.font(14));
-		tfPreco = new TextField();
-		tfPreco.setPrefWidth(250);
-		tfPreco.setPromptText("Ex: 150.00");
-		hboxPreco.getChildren().addAll(lblPreco, tfPreco);
+        // Split
+        HBox main = new HBox(20);
+        VBox.setVgrow(main, Priority.ALWAYS);
+        main.getChildren().addAll(criarPainelTabela(), criarPainelForm());
 
-		// Botão Cadastro
-		Button btnCadastro = new Button("Cadastrar");
-		btnCadastro.setPrefWidth(150);
-		btnCadastro.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-		btnCadastro.setStyle(
-				"-fx-background-color: #00FF00; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 10 20;");
-		btnCadastro.setOnAction(e -> {
-			try {
-				handleLogin();
-			} catch (SQLException e1) {
+        root.getChildren().addAll(titulo, main);
 
-				e1.printStackTrace();
-			}
-		});
+        carregarQuartos();
+        return root;
+    }
 
-		// Label Erro
-		lblErro = new Label();
-		lblErro.setTextFill(Color.RED);
-		lblErro.setFont(Font.font(12));
-		lblErro.setStyle("-fx-padding: 10 0 0 0;");
+    // ─────────────────────────────────────────────────────────
+    // PAINEL ESQUERDO — TABELA
+    // ─────────────────────────────────────────────────────────
 
-		root.getChildren().addAll(lblTitulo, hboxCodQuarto, hboxNumQuarto, hboxQtd, hboxPreco, btnCadastro, lblErro);
-		Scene scene = new Scene(root, 450, 450);
-		return scene;
-	}
+    private VBox criarPainelTabela() {
+        VBox panel = new VBox(12);
+        HBox.setHgrow(panel, Priority.ALWAYS);
+        panel.setPadding(new Insets(20));
+        panel.setStyle(ThemeManager.cardStyle());
 
-	private boolean validarCampos() {
-		String cadastro = tfNumQuarto.getText().trim();
-		String qtd = tfQtdPessoas.getText().trim();
-		String preco = tfPreco.getText().trim();
-		String codQuarto = tfCodQuarto.getText().trim();
-		
-		return !codQuarto.isEmpty() && !cadastro.isEmpty() && !qtd.isEmpty() && !preco.isEmpty();
-	}
+        Label lblSec = new Label("QUARTOS CADASTRADOS");
+        lblSec.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+        lblSec.setTextFill(Color.web(ThemeManager.sidebarLabel()));
 
-	private void handleLogin() throws SQLException {
-		lblErro.setText(""); // Limpa mensagem anterior
-		if (validarCampos()) {
-			lblErro.setTextFill(Color.GREEN);
-			lblErro.setText("Cadastro realizado com sucesso!");
-			String codQuarto =  tfCodQuarto.getText().trim();
-			String numQuarto = tfNumQuarto.getText().trim();
-			int qtdPessoas = Integer.parseInt(tfQtdPessoas.getText().trim());
-			double preco = Double.parseDouble(tfPreco.getText().trim());
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-			Quarto quarto = new Quarto(codQuarto, numQuarto, qtdPessoas, preco, 1);
-			quartoCtrl = new QuartoController(quarto);
-			quartoCtrl.salvarQuarto();
+        Button btnAtualizar = new Button("↻ Atualizar");
+        btnAtualizar.setFont(Font.font("Arial", 11));
+        btnAtualizar.setStyle(estiloSecundario());
+        btnAtualizar.setOnAction(e -> carregarQuartos());
 
-		} else {
-			lblErro.setTextFill(Color.RED);
-			lblErro.setText("Por favor, preencha todos os campos!");
-			tfNumQuarto.requestFocus(); // Foca no campo livro
-		}
-	}
+        Button btnNovo = new Button("+ Novo Quarto");
+        btnNovo.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+        btnNovo.setStyle(estiloBtnAzul());
+        btnNovo.setOnMouseEntered(e -> btnNovo.setStyle(estiloBtnAzulHover()));
+        btnNovo.setOnMouseExited(e  -> btnNovo.setStyle(estiloBtnAzul()));
+        btnNovo.setOnAction(e -> resetarFormParaAdicao());
+
+        HBox header = new HBox(8, lblSec, spacer, btnAtualizar, btnNovo);
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        tabela = new TableView<>();
+        tabela.setStyle(ThemeManager.tableStyle());
+        tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        VBox.setVgrow(tabela, Priority.ALWAYS);
+
+        configurarColunas();
+
+        // Clique em linha → preenche formulário de edição
+        tabela.getSelectionModel().selectedItemProperty().addListener(
+            (obs, old, newVal) -> { if (newVal != null) preencherFormParaEdicao(newVal); }
+        );
+
+        panel.getChildren().addAll(header, tabela);
+        return panel;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void configurarColunas() {
+        TableColumn<Quarto, Integer> colNum = new TableColumn<>("Nº Quarto");
+        colNum.setCellValueFactory(new PropertyValueFactory<>("numeroQuarto"));
+        colNum.setCellFactory(col -> celulaInteiro());
+        colNum.setMinWidth(90);
+
+        TableColumn<Quarto, String> colTipo = new TableColumn<>("Tipo");
+        colTipo.setCellValueFactory(new PropertyValueFactory<>("nomeTipo"));
+        colTipo.setCellFactory(col -> celulaTexto());
+        colTipo.setMinWidth(160);
+
+        // Status derivado das reservas ativas — verde/laranja/vermelho conforme período
+        // Tooltip exibe todas as reservas ativas quando há mais de uma
+        TableColumn<Quarto, String> colStatus = new TableColumn<>("Status / Período");
+        colStatus.setCellValueFactory(cd ->
+            new SimpleStringProperty(cd.getValue().getStatusDisplay())
+        );
+        colStatus.setMinWidth(200);
+        colStatus.setCellFactory(col -> new TableCell<Quarto, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setTooltip(null);
+                if (empty || item == null) { setText(""); setStyle(""); return; }
+                setText(item);
+                setStyle("-fx-font-weight: bold;");
+                if (item.equals("Disponível")) {
+                    setTextFill(Color.web("#27AE60"));
+                } else if (item.startsWith("Ocupado")) {
+                    setTextFill(Color.web("#E74C3C"));
+                } else if (item.startsWith("Reservado")) {
+                    setTextFill(Color.web("#E67E22"));
+                } else {
+                    setTextFill(Color.web("#C9A84C"));
+                }
+                // Tooltip com todas as reservas ativas se houver mais de uma
+                Quarto q = getTableView().getItems().get(getIndex());
+                if (q != null && q.getReservasAtivas().size() > 1) {
+                    java.time.format.DateTimeFormatter fmt =
+                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    StringBuilder sb = new StringBuilder("Todas as reservas ativas:\n");
+                    for (java.time.LocalDate[] r : q.getReservasAtivas()) {
+                        sb.append("• ").append(r[0].format(fmt))
+                          .append(" a ").append(r[1].format(fmt)).append("\n");
+                    }
+                    setTooltip(new Tooltip(sb.toString().trim()));
+                }
+            }
+        });
+
+        TableColumn<Quarto, String> colPreco = new TableColumn<>("Preço/Noite");
+        colPreco.setCellValueFactory(cd ->
+            new SimpleStringProperty(String.format("R$ %,.2f", cd.getValue().getPrecoBase()))
+        );
+        colPreco.setCellFactory(col -> celulaTexto());
+        colPreco.setMinWidth(110);
+
+        tabela.getColumns().addAll(colNum, colTipo, colStatus, colPreco);
+    }
+
+    /** Célula de texto com cor definida pelo tema atual. */
+    private TableCell<Quarto, String> celulaTexto() {
+        return new TableCell<Quarto, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item);
+                setTextFill(ThemeManager.tableCellTextColor());
+            }
+        };
+    }
+
+    /** Célula de inteiro com cor definida pelo tema atual. */
+    private TableCell<Quarto, Integer> celulaInteiro() {
+        return new TableCell<Quarto, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.toString());
+                setTextFill(ThemeManager.tableCellTextColor());
+            }
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // PAINEL DIREITO — FORMULÁRIO
+    // ─────────────────────────────────────────────────────────
+
+    private VBox criarPainelForm() {
+        VBox panel = new VBox(14);
+        panel.setPrefWidth(350);
+        panel.setMinWidth(330);
+        panel.setPadding(new Insets(25, 28, 25, 28));
+        panel.setStyle(ThemeManager.cardStyle());
+
+        lblFormTitulo = new Label("➕  Novo Quarto");
+        lblFormTitulo.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        lblFormTitulo.setTextFill(Color.web(ThemeManager.titleColor()));
+
+        Separator sep = new Separator();
+
+        // Nº do Quarto
+        VBox boxNum = campo("Nº do Quarto: *  (1 – 9999)");
+        tfNumQuarto = new TextField();
+        tfNumQuarto.setPromptText("Ex: 101");
+        tfNumQuarto.setFont(Font.font(13));
+        tfNumQuarto.setStyle(ThemeManager.fieldStyle());
+        tfNumQuarto.setOnKeyTyped(e -> resetarFeedback());
+        boxNum.getChildren().add(tfNumQuarto);
+
+        // Tipo do Quarto
+        VBox boxTipo = campo("Tipo do Quarto: *");
+        cbTipo = new ComboBox<>();
+        cbTipo.setPromptText("Selecione o tipo");
+        cbTipo.setPrefWidth(Double.MAX_VALUE);
+        ThemeManager.applyComboStyle(cbTipo);
+        carregarTipos();
+        boxTipo.getChildren().add(cbTipo);
+
+        // Feedback
+        lblFeedback = new Label();
+        lblFeedback.setFont(Font.font("Arial", 12));
+        lblFeedback.setWrapText(true);
+
+        // Botão primário
+        btnPrimario = new Button("Cadastrar Quarto");
+        btnPrimario.setPrefWidth(Double.MAX_VALUE);
+        btnPrimario.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        btnPrimario.setStyle(estiloBtnAzul());
+        btnPrimario.setOnMouseEntered(e -> btnPrimario.setStyle(
+            quartoSelecionado == null ? estiloBtnAzulHover() : estiloBtnVerdeHover()));
+        btnPrimario.setOnMouseExited(e  -> btnPrimario.setStyle(
+            quartoSelecionado == null ? estiloBtnAzul() : estiloBtnVerde()));
+        btnPrimario.setOnAction(e -> handleSalvar());
+
+        // Botão excluir
+        btnExcluir = new Button("Excluir Quarto");
+        btnExcluir.setPrefWidth(Double.MAX_VALUE);
+        btnExcluir.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        btnExcluir.setStyle(estiloBtnVermelho());
+        btnExcluir.setOnMouseEntered(e -> btnExcluir.setStyle(estiloBtnVermelhoHover()));
+        btnExcluir.setOnMouseExited(e  -> btnExcluir.setStyle(estiloBtnVermelho()));
+        btnExcluir.setOnAction(e -> handleExcluir());
+        btnExcluir.setVisible(false);
+        btnExcluir.setManaged(false);
+
+        // Botão cancelar
+        btnCancelar = new Button("Cancelar edição");
+        btnCancelar.setPrefWidth(Double.MAX_VALUE);
+        btnCancelar.setFont(Font.font("Arial", 12));
+        btnCancelar.setStyle(estiloSecundario());
+        btnCancelar.setOnAction(e -> resetarFormParaAdicao());
+        btnCancelar.setVisible(false);
+        btnCancelar.setManaged(false);
+
+        panel.getChildren().addAll(
+            lblFormTitulo, sep,
+            boxNum, boxTipo,
+            lblFeedback, btnPrimario, btnExcluir, btnCancelar
+        );
+
+        return panel;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // LÓGICA CRUD
+    // ─────────────────────────────────────────────────────────
+
+    private void carregarQuartos() {
+        tabela.setItems(FXCollections.observableArrayList(
+            new QuartoController().listar()
+        ));
+        resetarFormParaAdicao();
+    }
+
+    private void carregarTipos() {
+        try {
+            Conexao.conectar();
+            TipoQuartoDao dao = new TipoQuartoDao(Conexao.conexao);
+            cbTipo.getItems().setAll(dao.listar());
+        } catch (SQLException e) {
+            // ComboBox fica vazio; o usuário verá o erro ao tentar salvar
+        } finally {
+            Conexao.desconectar();
+        }
+    }
+
+    private void handleSalvar() {
+        // Validações
+        String erroNum = Validador.validarNumeroQuarto(tfNumQuarto.getText());
+        if (erroNum != null) { mostrarErro(erroNum); tfNumQuarto.requestFocus(); return; }
+
+        if (cbTipo.getValue() == null) {
+            mostrarErro("Selecione o tipo do quarto.");
+            return;
+        }
+
+        int        num  = Integer.parseInt(tfNumQuarto.getText().trim());
+        TipoQuarto tipo = cbTipo.getValue();
+
+        if (quartoSelecionado == null) {
+            // Modo adição
+            Quarto novo = new Quarto(num, tipo.getIdTipoQuarto(), 1); // status 1 = Disponível
+            if (new QuartoController(novo).inserir()) {
+                mostrarSucesso("✔  Quarto " + num + " cadastrado com sucesso!");
+                carregarQuartos();
+            } else {
+                mostrarErro("Falha ao cadastrar. O número já pode estar em uso.");
+            }
+        } else {
+            // Modo edição
+            Quarto atualizado = new Quarto();
+            atualizado.setCodQuarto(quartoSelecionado.getCodQuarto()); // PK
+            atualizado.setNumeroQuarto(num);
+            atualizado.setIdTipoQuarto(tipo.getIdTipoQuarto());
+
+            if (new QuartoController(atualizado).atualizar()) {
+                mostrarSucesso("✔  Quarto atualizado com sucesso!");
+                carregarQuartos();
+            } else {
+                mostrarErro("Falha ao salvar alterações.");
+            }
+        }
+    }
+
+    private void handleExcluir() {
+        if (quartoSelecionado == null) return;
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirmar Exclusão");
+        confirm.setHeaderText(null);
+        confirm.setContentText(
+            "Excluir o Quarto " + quartoSelecionado.getNumeroQuarto() + " ("
+            + quartoSelecionado.getNomeTipo() + ")?\n\nEsta ação não pode ser desfeita."
+        );
+
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                QuartoController ctrl = new QuartoController();
+                if (ctrl.deletar(quartoSelecionado.getCodQuarto())) {
+                    carregarQuartos();
+                } else if ("HAS_HISTORY".equals(ctrl.getUltimoErro())) {
+                    mostrarErro("Não é possível excluir: este quarto possui histórico de reservas. "
+                        + "Quartos com reservas registradas não podem ser removidos para preservar os dados financeiros do hotel.");
+                } else {
+                    mostrarErro("Erro inesperado ao excluir o quarto.");
+                }
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // TRANSIÇÕES DE MODO
+    // ─────────────────────────────────────────────────────────
+
+    private void preencherFormParaEdicao(Quarto q) {
+        quartoSelecionado = q;
+
+        lblFormTitulo.setText("✏  Editar Quarto");
+
+        tfNumQuarto.setText(String.valueOf(q.getNumeroQuarto()));
+
+        // Seleciona o tipo correspondente no ComboBox
+        for (TipoQuarto t : cbTipo.getItems()) {
+            if (t.getIdTipoQuarto() == q.getIdTipoQuarto()) {
+                cbTipo.setValue(t);
+                break;
+            }
+        }
+
+        btnPrimario.setText("Salvar Alterações");
+        btnPrimario.setStyle(estiloBtnVerde());
+
+        btnExcluir.setVisible(true);
+        btnExcluir.setManaged(true);
+        btnCancelar.setVisible(true);
+        btnCancelar.setManaged(true);
+
+        resetarFeedback();
+    }
+
+    private void resetarFormParaAdicao() {
+        quartoSelecionado = null;
+        tabela.getSelectionModel().clearSelection();
+
+        lblFormTitulo.setText("➕  Novo Quarto");
+
+        tfNumQuarto.clear();
+        cbTipo.getSelectionModel().clearSelection();
+
+        btnPrimario.setText("Cadastrar Quarto");
+        btnPrimario.setStyle(estiloBtnAzul());
+
+        btnExcluir.setVisible(false);
+        btnExcluir.setManaged(false);
+        btnCancelar.setVisible(false);
+        btnCancelar.setManaged(false);
+
+        resetarFeedback();
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // HELPERS DE CONSTRUÇÃO
+    // ─────────────────────────────────────────────────────────
+
+    private VBox campo(String labelTexto) {
+        Label lbl = new Label(labelTexto);
+        lbl.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+        lbl.setTextFill(Color.web(ThemeManager.labelColor()));
+        return new VBox(5, lbl);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // FEEDBACK
+    // ─────────────────────────────────────────────────────────
+
+    private void mostrarErro(String msg) {
+        lblFeedback.setTextFill(Color.web("#E74C3C"));
+        lblFeedback.setText("⚠  " + msg);
+    }
+
+    private void mostrarSucesso(String msg) {
+        lblFeedback.setTextFill(Color.web("#27AE60"));
+        lblFeedback.setText(msg);
+    }
+
+    private void resetarFeedback() {
+        lblFeedback.setText("");
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ESTILOS
+    // ─────────────────────────────────────────────────────────
+
+    private String estiloBtnAzul()          { return btn("#2980B9"); }
+    private String estiloBtnAzulHover()     { return btn("#1F6691"); }
+    private String estiloBtnVerde()         { return btn("#27AE60"); }
+    private String estiloBtnVerdeHover()    { return btn("#1E8449"); }
+    private String estiloBtnVermelho()      { return btn("#E74C3C"); }
+    private String estiloBtnVermelhoHover() { return btn("#C0392B"); }
+
+    private String btn(String cor) {
+        return "-fx-background-color: " + cor + "; -fx-text-fill: white;"
+             + "-fx-background-radius: 8; -fx-padding: 10; -fx-cursor: hand;";
+    }
+
+    private String estiloSecundario() {
+        return "-fx-background-color: " + ThemeManager.card() + ";"
+             + "-fx-border-color: " + ThemeManager.fieldBorder() + ";"
+             + "-fx-border-radius: 6; -fx-padding: 8 14; -fx-cursor: hand;"
+             + "-fx-text-fill: " + ThemeManager.labelColor() + ";";
+    }
 }

@@ -121,7 +121,8 @@ public class Tela_Login {
         BorderPane.setMargin(card, new Insets(60));
         root.setCenter(card);
 
-        return new Scene(root, 480, 580);
+        // Sem tamanho fixo: o Stage já está setMaximized(true), a Scene se adapta.
+        return new Scene(root);
     }
 
     // ── Lógica de login ───────────────────────────────────────

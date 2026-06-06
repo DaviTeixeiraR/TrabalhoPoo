@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import model.Conexao;
+import model.ThemeManager;
 
 /**
  * Dashboard principal do sistema.
@@ -25,23 +26,23 @@ public class TelaMenuPrincipal {
     public Node getNode() {
         ScrollPane scroll = new ScrollPane(criarConteudo());
         scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color: #F0F4F8; -fx-background: #F0F4F8;");
+        scroll.setStyle(ThemeManager.scrollStyle());
         return scroll;
     }
 
     private VBox criarConteudo() {
         VBox root = new VBox(28);
         root.setPadding(new Insets(35, 40, 35, 40));
-        root.setStyle("-fx-background-color: #F0F4F8;");
+        root.setStyle("-fx-background-color: " + ThemeManager.bg() + ";");
 
         // ── Cabeçalho ──
         VBox header = new VBox(4);
         Label lblTitulo = new Label("🏠  Dashboard");
         lblTitulo.setFont(Font.font("Arial", FontWeight.BOLD, 26));
-        lblTitulo.setTextFill(Color.web("#1E2A4A"));
+        lblTitulo.setTextFill(Color.web(ThemeManager.titleColor()));
         Label lblSub = new Label("Bem-vindo ao sistema de gestão do hotel");
         lblSub.setFont(Font.font("Arial", 14));
-        lblSub.setTextFill(Color.web("#666"));
+        lblSub.setTextFill(Color.web(ThemeManager.subtitleColor()));
         header.getChildren().addAll(lblTitulo, lblSub);
 
         // ── Cards de estatísticas ──
@@ -49,27 +50,30 @@ public class TelaMenuPrincipal {
         cards.setHgap(20);
         cards.setVgap(20);
 
-        // Carrega dados do banco
-        int disponiveis   = carregarContagem(1);
-        int ocupados      = carregarContagem(2);
-        int reservasAtiv  = carregarReservasAtivas();
-        int reservasHoje  = carregarReservasHoje();
-        double receita    = carregarReceita();
+        int disponiveis  = carregarDisponiveis();
+        int reservados   = carregarReservados();
+        int ocupados     = carregarOcupados();
+        int reservasAtiv = carregarReservasAtivas();
+        int reservasHoje = carregarReservasHoje();
+        double receita   = carregarReceita();
 
-        cards.add(criarCard("🟢", "Quartos Disponíveis", String.valueOf(disponiveis),  "#27AE60", "#EAFAF1"), 0, 0);
-        cards.add(criarCard("🔴", "Quartos Ocupados",    String.valueOf(ocupados),     "#E74C3C", "#FDEDEC"), 1, 0);
-        cards.add(criarCard("📋", "Reservas Ativas",      String.valueOf(reservasAtiv), "#2980B9", "#EBF5FB"), 2, 0);
-        cards.add(criarCard("📅", "Entradas Hoje",        String.valueOf(reservasHoje), "#8E44AD", "#F5EEF8"), 3, 0);
+        // Linha 0: status dos quartos + reservas ativas
+        cards.add(criarCard("🟢", "Disponíveis",     String.valueOf(disponiveis),  "#27AE60", "#EAFAF1"), 0, 0);
+        cards.add(criarCard("🟠", "Com Reserva Futura", String.valueOf(reservados),   "#E67E22", "#FEF5EC"), 1, 0);
+        cards.add(criarCard("🔴", "Ocupados",         String.valueOf(ocupados),     "#E74C3C", "#FDEDEC"), 2, 0);
+        cards.add(criarCard("📋", "Reservas Ativas",  String.valueOf(reservasAtiv), "#2980B9", "#EBF5FB"), 3, 0);
 
-        // Card de receita - largura dupla
+        // Linha 1: entradas hoje + receita
+        cards.add(criarCard("📅", "Entradas Hoje", String.valueOf(reservasHoje), "#8E44AD", "#F5EEF8"), 0, 1);
+
         HBox cardReceita = criarCardReceita(receita);
-        GridPane.setColumnSpan(cardReceita, 2);
-        cards.add(cardReceita, 0, 1);
+        GridPane.setColumnSpan(cardReceita, 3);
+        cards.add(cardReceita, 1, 1);
 
         // ── Seção de ações rápidas ──
         Label lblAcoes = new Label("Ações Rápidas");
         lblAcoes.setFont(Font.font("Arial", FontWeight.BOLD, 17));
-        lblAcoes.setTextFill(Color.web("#1E2A4A"));
+        lblAcoes.setTextFill(Color.web(ThemeManager.titleColor()));
 
         HBox acoes = new HBox(15);
         acoes.setAlignment(Pos.CENTER_LEFT);
@@ -84,11 +88,13 @@ public class TelaMenuPrincipal {
         HBox dica = new HBox(10);
         dica.setAlignment(Pos.CENTER_LEFT);
         dica.setPadding(new Insets(15, 20, 15, 20));
-        dica.setStyle("-fx-background-color: #FEF9E7; -fx-background-radius: 10;"
-                    + "-fx-border-color: #F4D03F; -fx-border-radius: 10;");
+        dica.setStyle(
+            "-fx-background-color: " + ThemeManager.infoBg() + "; -fx-background-radius: 10;"
+          + "-fx-border-color: " + ThemeManager.infoBorder() + "; -fx-border-radius: 10;"
+        );
         Label lblDica = new Label("💡  Fluxo: Cadastre o Cliente → Faça Check-in selecionando o quarto e datas → No Checkout selecione a reserva e confirme o pagamento.");
         lblDica.setFont(Font.font("Arial", 13));
-        lblDica.setTextFill(Color.web("#7D6608"));
+        lblDica.setTextFill(Color.web(ThemeManager.infoText()));
         lblDica.setWrapText(true);
         dica.getChildren().add(lblDica);
 
@@ -104,11 +110,11 @@ public class TelaMenuPrincipal {
         card.setPadding(new Insets(22, 25, 22, 25));
         card.setPrefWidth(210);
         card.setStyle(
-            "-fx-background-color: " + corFundo + ";"
+            "-fx-background-color: " + ThemeManager.statCardBg(corFundo) + ";"
           + "-fx-background-radius: 14;"
-          + "-fx-border-color: " + corTexto + "22;"
+          + "-fx-border-color: " + corTexto + "44;"
           + "-fx-border-radius: 14;"
-          + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);"
+          + "-fx-effect: dropshadow(gaussian, " + ThemeManager.cardShadow() + ", 8, 0, 0, 2);"
         );
 
         Label lblIcone = new Label(icone);
@@ -120,7 +126,7 @@ public class TelaMenuPrincipal {
 
         Label lblTitulo = new Label(titulo);
         lblTitulo.setFont(Font.font("Arial", 13));
-        lblTitulo.setTextFill(Color.web("#555"));
+        lblTitulo.setTextFill(Color.web(ThemeManager.subtitleColor()));
 
         card.getChildren().addAll(lblIcone, lblValor, lblTitulo);
         return card;
@@ -132,10 +138,13 @@ public class TelaMenuPrincipal {
         HBox card = new HBox(20);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(22, 30, 22, 30));
+        String gradiente = ThemeManager.isDark()
+            ? "linear-gradient(to right, #080E18, #0F1A2E)"
+            : "linear-gradient(to right, #1E2A4A, #2E4070)";
         card.setStyle(
-            "-fx-background-color: linear-gradient(to right, #1E2A4A, #2E4070);"
+            "-fx-background-color: " + gradiente + ";"
           + "-fx-background-radius: 14;"
-          + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 10, 0, 0, 3);"
+          + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 10, 0, 0, 3);"
         );
 
         Label lblIcone = new Label("💰");
@@ -176,11 +185,26 @@ public class TelaMenuPrincipal {
 
     // ── Carrega dados do banco com fallback ───────────────────
 
-    private int carregarContagem(int idStatus) {
+    private int carregarDisponiveis() {
         try {
             Conexao.conectar();
-            dao.QuartoDao dao = new dao.QuartoDao(Conexao.conexao);
-            return dao.contarPorStatus(idStatus);
+            return new QuartoDao(Conexao.conexao).contarDisponiveis();
+        } catch (Exception e) { return 0; }
+        finally { Conexao.desconectar(); }
+    }
+
+    private int carregarReservados() {
+        try {
+            Conexao.conectar();
+            return new QuartoDao(Conexao.conexao).contarReservados();
+        } catch (Exception e) { return 0; }
+        finally { Conexao.desconectar(); }
+    }
+
+    private int carregarOcupados() {
+        try {
+            Conexao.conectar();
+            return new QuartoDao(Conexao.conexao).contarOcupados();
         } catch (Exception e) { return 0; }
         finally { Conexao.desconectar(); }
     }
